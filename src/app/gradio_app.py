@@ -1,6 +1,7 @@
 import gradio as gr
 
 from src.input.input_manager import InputManager
+from src.pipeline import tryon_pipeline
 
 
 # =========================================================
@@ -82,33 +83,33 @@ def generate(person_image, garment_image, history):
     # -----------------------------------------------------
     # AI PIPELINE
     # -----------------------------------------------------
-    #
-    # بعداً:
-    #
-    # generated_image = tryon_pipeline.run(
-    #     person_image=person_image,
-    #     garment_image=garment_image
-    # )
-    #
-    # -----------------------------------------------------
 
-    generated_image = None
+    try:
+        generated_image, elapsed_time = tryon_pipeline.run(
+            person_image=person_image,
+            garment_image=garment_image,
+            cloth_type="upper",
+        )
 
-    # -----------------------------------------------------
-    # AI NOT CONNECTED
-    # -----------------------------------------------------
-
-    if generated_image is None:
-
+    except ValueError as e:
         return (
-            "✅ تصاویر ورودی معتبر هستند.\n\n"
-            "🧠 موتور Virtual Try-On هنوز متصل نشده است.\n"
-            "History آماده دریافت Result مدل است.",
+            f"❌ {e}",
             history,
             0,
             history[0]["image"],
             history[0]["label"],
-            f"1 / {len(history)}"
+            f"1 / {len(history)}",
+        )
+
+    except Exception as e:
+        return (
+            "❌ تولید تصویر با خطا مواجه شد.\n\n"
+            f"جزئیات: {e}",
+            history,
+            0,
+            history[0]["image"],
+            history[0]["label"],
+            f"1 / {len(history)}",
         )
 
     # -----------------------------------------------------
@@ -748,7 +749,9 @@ button[title*="Settings"] {
 # =========================================================
 
 with gr.Blocks(
-    title="پرو مجازی لباس"
+    title="پرو مجازی لباس",
+    css=custom_css,
+    analytics_enabled=False
 ) as app:
 
     # =====================================================
@@ -1130,8 +1133,5 @@ with gr.Blocks(
 # =========================================================
 
 if __name__ == "__main__":
-
-    app.launch(
-        css=custom_css
-    )
+    app.launch()
 
